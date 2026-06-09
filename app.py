@@ -35,5 +35,5 @@ if st.button("Predict"):
     df[enc_cols] = encoder.transform(df[cat_cols])
     pred = model.predict(df[num_cols + enc_cols])[0]
     prob = model.predict_proba(df[num_cols + enc_cols])[0]
-    st.success(f"Prediction: **{' Rain' if pred == 'Yes' or pred == 1 else '☀️ No Rain'}**")
+    st.success(f"Prediction: **{' Rain' if pred == 'Yes' or pred == 1 else ' No Rain'}**")
     st.metric("Rain probability", f"{prob[1]:.1%}")

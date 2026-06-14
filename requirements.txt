@@ -7,4 +7,5 @@ joblib
 streamlit
 plotly
 matplotlib
-seaborngit
+seaborn
+git

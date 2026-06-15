@@ -2,6 +2,11 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
+import sklearn
+
+st.write("sklearn:", sklearn.__version__)
+st.write("imputer type:", type(imputer))
+st.write("has _fill_dtype:", hasattr(imputer, "_fill_dtype"))
 
 model_bundle = joblib.load('aussie_rain.joblib')
 model    = model_bundle['model']
@@ -25,15 +30,45 @@ with col2:
     rain_today = st.selectbox("Rain Today?", ["No", "Yes"])
 
 if st.button("Predict"):
+
     inp = {c: np.nan for c in num_cols + cat_cols}
-    inp.update({'MinTemp': min_temp, 'MaxTemp': max_temp,
-                'Humidity3pm': humidity_3pm, 'WindGustSpeed': wind_gust,
-                'Pressure9am': pressure, 'RainToday': rain_today})
+
+    inp.update({
+        'MinTemp': min_temp,
+        'MaxTemp': max_temp,
+        'Humidity3pm': humidity_3pm,
+        'WindGustSpeed': wind_gust,
+        'Pressure9am': pressure,
+        'RainToday': rain_today
+    })
+
     df = pd.DataFrame([inp])
-    df[num_cols] = imputer.transform(df[num_cols])
-    df[num_cols] = scaler.transform(df[num_cols])
-    df[enc_cols] = encoder.transform(df[cat_cols])
-    pred = model.predict(df[num_cols + enc_cols])[0]
-    prob = model.predict_proba(df[num_cols + enc_cols])[0]
-    st.success(f"Prediction: **{' Rain' if pred == 'Yes' or pred == 1 else ' No Rain'}**")
-    st.metric("Rain probability", f"{prob[1]:.1%}")
+
+    try:
+        # Numeric preprocessing
+        num_data = imputer.transform(df[num_cols])
+        num_data = scaler.transform(num_data)
+
+        # Categorical preprocessing
+        cat_data = encoder.transform(df[cat_cols])
+
+        # Final dataframe
+        final_df = pd.DataFrame(
+            np.hstack([num_data, cat_data]),
+            columns=num_cols + enc_cols
+        )
+
+        pred = model.predict(final_df)[0]
+        prob = model.predict_proba(final_df)[0]
+
+        st.success(
+            f"Prediction: {'🌧 Rain' if pred in [1,'Yes'] else '☀ No Rain'}"
+        )
+
+        st.metric(
+            "Rain probability",
+            f"{prob[1]:.1%}"
+        )
+
+    except Exception as e:
+        st.error(f"Prediction failed: {e}")
